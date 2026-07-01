@@ -1,0 +1,34 @@
+{
+  "name": "surface-hooks",
+  "version": "0.1.0",
+  "description": "Small, focused React hooks for polished interfaces.",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "author": "Nicolas Milliard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NicolasMilliard/surface.git",
+    "directory": "packages/surface-hooks"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  }
+}
