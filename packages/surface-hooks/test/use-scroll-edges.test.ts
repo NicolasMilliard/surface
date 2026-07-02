@@ -78,4 +78,66 @@ describe('useScrollEdges', () => {
       hasBottomEdge: false,
     });
   });
+
+  it('updates the horizontal edges when the container scrolls', () => {
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 300,
+    });
+
+    act(() => result.current.ref(element));
+
+    expect(result.current).toMatchObject({
+      hasLeftEdge: false,
+      hasRightEdge: true,
+    });
+
+    element.scrollLeft = 100;
+    fireEvent.scroll(element);
+
+    expect(result.current).toMatchObject({
+      hasLeftEdge: true,
+      hasRightEdge: true,
+    });
+
+    element.scrollLeft = 200;
+    fireEvent.scroll(element);
+
+    expect(result.current).toMatchObject({
+      hasLeftEdge: true,
+      hasRightEdge: false,
+    });
+  });
+
+  it('reports no edges when the container is not scrollable', () => {
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    expect(result.current).toMatchObject({
+      hasTopEdge: false,
+      hasBottomEdge: false,
+      hasLeftEdge: false,
+      hasRightEdge: false,
+    });
+  });
 });
