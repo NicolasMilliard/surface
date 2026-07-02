@@ -13,6 +13,10 @@ export interface ScrollEdges {
   hasRightEdge: boolean;
 }
 
+export interface UseScrollEdgesOptions {
+  tolerance?: number;
+}
+
 export interface UseScrollEdgesResult<
   T extends HTMLElement,
 > extends ScrollEdges {
@@ -27,9 +31,10 @@ const initialEdges: ScrollEdges = {
   hasRightEdge: false,
 };
 
-export function useScrollEdges<
-  T extends HTMLElement = HTMLElement,
->(): UseScrollEdgesResult<T> {
+export function useScrollEdges<T extends HTMLElement = HTMLElement>(
+  options: UseScrollEdgesOptions = {},
+): UseScrollEdgesResult<T> {
+  const tolerance = Math.max(0, options.tolerance ?? 1);
   const elementRef = useRef<T | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const [edges, setEdges] = useState(initialEdges);
@@ -42,14 +47,16 @@ export function useScrollEdges<
     }
 
     setEdges({
-      hasTopEdge: element.scrollTop > 0,
+      hasTopEdge: element.scrollTop > tolerance,
       hasBottomEdge:
-        element.scrollHeight - element.clientHeight - element.scrollTop > 0,
-      hasLeftEdge: element.scrollLeft > 0,
+        element.scrollHeight - element.clientHeight - element.scrollTop >
+        tolerance,
+      hasLeftEdge: element.scrollLeft > tolerance,
       hasRightEdge:
-        element.scrollWidth - element.clientWidth - element.scrollLeft > 0,
+        element.scrollWidth - element.clientWidth - element.scrollLeft >
+        tolerance,
     });
-  }, []);
+  }, [tolerance]);
 
   const ref = useCallback<RefCallback<T>>(
     (element) => {

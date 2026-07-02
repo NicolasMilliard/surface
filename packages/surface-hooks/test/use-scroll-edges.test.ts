@@ -140,4 +140,34 @@ describe('useScrollEdges', () => {
       hasRightEdge: false,
     });
   });
+
+  it('applies the default and configurable measurement tolerance', () => {
+    const defaultTolerance = renderHook(() => useScrollEdges<HTMLDivElement>());
+    const exactTolerance = renderHook(() =>
+      useScrollEdges<HTMLDivElement>({ tolerance: 0 }),
+    );
+
+    const defaultElement = document.createElement('div');
+    const exactElement = document.createElement('div');
+
+    const measurements = {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 200.5,
+      scrollLeft: 0,
+      scrollTop: 100,
+      scrollWidth: 100,
+    };
+
+    setScrollMeasurements(defaultElement, measurements);
+    setScrollMeasurements(exactElement, measurements);
+
+    act(() => {
+      defaultTolerance.result.current.ref(defaultElement);
+      exactTolerance.result.current.ref(exactElement);
+    });
+
+    expect(defaultTolerance.result.current.hasBottomEdge).toBe(false);
+    expect(exactTolerance.result.current.hasBottomEdge).toBe(true);
+  });
 });
