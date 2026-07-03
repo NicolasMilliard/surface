@@ -79,12 +79,53 @@ export function useScrollEdges<T extends HTMLElement = HTMLElement>(
         typeof ResizeObserver === 'undefined'
           ? null
           : new ResizeObserver(update);
+
+      const observedChildren = new Set<Element>();
+
+      const syncObservedChildren = () => {
+        if (!resizeObserver) {
+          return;
+        }
+
+        const currentChildren = new Set(Array.from(element.children));
+
+        observedChildren.forEach((child) => {
+          if (!currentChildren.has(child)) {
+            resizeObserver.unobserve(child);
+            observedChildren.delete(child);
+          }
+        });
+
+        currentChildren.forEach((child) => {
+          if (!observedChildren.has(child)) {
+            resizeObserver.observe(child);
+            observedChildren.add(child);
+          }
+        });
+      };
+
       resizeObserver?.observe(element);
+      syncObservedChildren();
+
+      const mutationObserver =
+        typeof MutationObserver === 'undefined'
+          ? null
+          : new MutationObserver(() => {
+              syncObservedChildren();
+              update();
+            });
+
+      mutationObserver?.observe(element, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
 
       cleanupRef.current = () => {
         element.removeEventListener('scroll', update);
         ownerWindow?.removeEventListener('resize', update);
         resizeObserver?.disconnect();
+        mutationObserver?.disconnect();
       };
 
       update();

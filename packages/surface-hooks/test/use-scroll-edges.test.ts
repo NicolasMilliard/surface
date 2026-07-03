@@ -22,6 +22,35 @@ function setScrollMeasurements(
   }
 }
 
+function installResizeObserverMock() {
+  let callback: ResizeObserverCallback | undefined;
+  const observe = vi.fn();
+  const disconnect = vi.fn();
+
+  class ResizeObserverMock {
+    constructor(nextCallback: ResizeObserverCallback) {
+      callback = nextCallback;
+    }
+
+    observe = observe;
+    disconnect = disconnect;
+    unobserve = vi.fn();
+  }
+
+  vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+
+  return {
+    observe,
+    disconnect,
+    trigger() {
+      if (!callback) {
+        throw new Error('ResizeObserver has not been created');
+      }
+      callback([], {} as ResizeObserver);
+    },
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -207,22 +236,8 @@ describe('useScrollEdges', () => {
     expect(result.current.hasBottomEdge).toBe(true);
   });
 
-  it('updates when the obeserved container size changes', () => {
-    let resizeCallback: ResizeObserverCallback | undefined;
-    const observe = vi.fn();
-    const disconnect = vi.fn();
-
-    class ResizeObserverMock {
-      constructor(callback: ResizeObserverCallback) {
-        resizeCallback = callback;
-      }
-
-      observe = observe;
-      disconnect = disconnect;
-      unobserve = vi.fn();
-    }
-
-    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+  it('updates when the observed container size changes', () => {
+    const resizeObserver = installResizeObserverMock();
 
     const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
     const element = document.createElement('div');
@@ -248,10 +263,86 @@ describe('useScrollEdges', () => {
     });
 
     act(() => {
-      resizeCallback?.([], {} as ResizeObserver);
+      resizeObserver.trigger();
     });
 
-    expect(observe).toHaveBeenCalledWith(element);
+    expect(resizeObserver.observe).toHaveBeenCalledWith(element);
+    expect(result.current.hasBottomEdge).toBe(true);
+  });
+
+  it('updates when existing content changes size', () => {
+    const resizeObserver = installResizeObserverMock();
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+    const content = document.createElement('div');
+
+    element.append(content);
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    expect(resizeObserver.observe).toHaveBeenCalledWith(element);
+    expect(resizeObserver.observe).toHaveBeenCalledWith(content);
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => {
+      resizeObserver.trigger();
+    });
+
+    expect(result.current.hasBottomEdge).toBe(true);
+  });
+
+  it('updates when content is added after attachment', async () => {
+    const resizeObserver = installResizeObserverMock();
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    const content = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    await act(async () => {
+      element.append(content);
+      await Promise.resolve();
+    });
+
+    expect(resizeObserver.observe).toHaveBeenCalledWith(content);
     expect(result.current.hasBottomEdge).toBe(true);
   });
 });
