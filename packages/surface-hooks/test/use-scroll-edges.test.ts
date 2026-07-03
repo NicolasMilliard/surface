@@ -368,4 +368,65 @@ describe('useScrollEdges', () => {
 
     expect(result.current).toBe(resultAfterMeasurement);
   });
+
+  it('cleans up listeners and observers when unmounted', () => {
+    const resizeObserver = installResizeObserverMock();
+    const mutationDisconnect = vi.spyOn(
+      MutationObserver.prototype,
+      'disconnect',
+    );
+
+    const element = document.createElement('div');
+    const elementRemoveListener = vi.spyOn(element, 'removeEventListener');
+    const windowRemoveListener = vi.spyOn(window, 'removeEventListener');
+
+    const { result, unmount } = renderHook(() =>
+      useScrollEdges<HTMLDivElement>(),
+    );
+
+    act(() => result.current.ref(element));
+    unmount();
+
+    expect(elementRemoveListener).toHaveBeenCalledWith(
+      'scroll',
+      expect.any(Function),
+    );
+    expect(windowRemoveListener).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function),
+    );
+    expect(resizeObserver.disconnect).toHaveBeenCalledOnce();
+    expect(mutationDisconnect).toHaveBeenCalledOnce();
+  });
+
+  it('supports manually updating after an imperative layout change', () => {
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    expect(result.current.hasBottomEdge).toBe(false);
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.update());
+
+    expect(result.current.hasBottomEdge).toBe(true);
+  });
 });
