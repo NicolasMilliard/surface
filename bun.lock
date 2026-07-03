@@ -30,16 +30,18 @@
       "dependencies": {
         "react": "19.2.7",
         "react-dom": "19.2.7",
+        "surface-hooks": "workspace:*",
       },
     },
     "packages/surface-hooks": {
       "name": "surface-hooks",
       "version": "0.1.0",
       "devDependencies": {
+        "react": "19.2.7",
         "react-dom": "19.2.7",
       },
       "peerDependencies": {
-        "react": "19.2.7",
+        "react": ">=18.0.0",
       },
     },
   },

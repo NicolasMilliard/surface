@@ -9,10 +9,14 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "bun run --filter surface dev",
-    "build": "bun run --workspaces --if-present build",
+    "build": "bun run --filter surface-hooks build && bun run --filter surface build",
+    "dev": "bun run --filter surface-hooks build && bun run --workspaces --parallel --if-present dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint .",
-    "preview": "bun run --filter surface preview"
+    "preview": "bun run --filter surface preview",
+    "test": "bun run --filter surface-hooks test",
+    "typecheck": "bun run --workspaces --if-present typecheck"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
