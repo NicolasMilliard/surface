@@ -31,6 +31,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": "19.2.7"
+  },
+  "devDependencies": {
+    "react-dom": "19.2.7"
   }
 }

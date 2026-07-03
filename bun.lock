@@ -35,8 +35,11 @@
     "packages/surface-hooks": {
       "name": "surface-hooks",
       "version": "0.1.0",
+      "devDependencies": {
+        "react-dom": "19.2.7",
+      },
       "peerDependencies": {
-        "react": ">=18.0.0",
+        "react": "19.2.7",
       },
     },
   },
