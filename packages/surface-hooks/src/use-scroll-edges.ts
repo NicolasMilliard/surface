@@ -31,6 +31,15 @@ const initialEdges: ScrollEdges = {
   hasRightEdge: false,
 };
 
+function edgesAreEqual(first: ScrollEdges, second: ScrollEdges) {
+  return (
+    first.hasTopEdge === second.hasTopEdge &&
+    first.hasBottomEdge === second.hasBottomEdge &&
+    first.hasLeftEdge === second.hasLeftEdge &&
+    first.hasRightEdge === second.hasRightEdge
+  );
+}
+
 export function useScrollEdges<T extends HTMLElement = HTMLElement>(
   options: UseScrollEdgesOptions = {},
 ): UseScrollEdgesResult<T> {
@@ -46,7 +55,7 @@ export function useScrollEdges<T extends HTMLElement = HTMLElement>(
       return;
     }
 
-    setEdges({
+    const nextEdges: ScrollEdges = {
       hasTopEdge: element.scrollTop > tolerance,
       hasBottomEdge:
         element.scrollHeight - element.clientHeight - element.scrollTop >
@@ -55,7 +64,11 @@ export function useScrollEdges<T extends HTMLElement = HTMLElement>(
       hasRightEdge:
         element.scrollWidth - element.clientWidth - element.scrollLeft >
         tolerance,
-    });
+    };
+
+    setEdges((currentEdges) =>
+      edgesAreEqual(currentEdges, nextEdges) ? currentEdges : nextEdges,
+    );
   }, [tolerance]);
 
   const ref = useCallback<RefCallback<T>>(

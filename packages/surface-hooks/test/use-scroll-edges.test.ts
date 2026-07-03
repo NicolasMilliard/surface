@@ -345,4 +345,27 @@ describe('useScrollEdges', () => {
     expect(resizeObserver.observe).toHaveBeenCalledWith(content);
     expect(result.current.hasBottomEdge).toBe(true);
   });
+
+  it('preserves the result when the edge values have not changed', () => {
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    const resultAfterMeasurement = result.current;
+
+    fireEvent.scroll(element);
+
+    expect(result.current).toBe(resultAfterMeasurement);
+  });
 });
