@@ -1,5 +1,5 @@
 import { act, fireEvent, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useScrollEdges } from '../src';
 
 function setScrollMeasurements(
@@ -21,6 +21,10 @@ function setScrollMeasurements(
     });
   }
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('useScrollEdges', () => {
   it('calculates the initial vertical edges', () => {
@@ -169,5 +173,85 @@ describe('useScrollEdges', () => {
 
     expect(defaultTolerance.result.current.hasBottomEdge).toBe(false);
     expect(exactTolerance.result.current.hasBottomEdge).toBe(true);
+  });
+
+  it('updates the edges when the window resizes', () => {
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    expect(result.current.hasBottomEdge).toBe(false);
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    fireEvent.resize(window);
+
+    expect(result.current.hasBottomEdge).toBe(true);
+  });
+
+  it('updates when the obeserved container size changes', () => {
+    let resizeCallback: ResizeObserverCallback | undefined;
+    const observe = vi.fn();
+    const disconnect = vi.fn();
+
+    class ResizeObserverMock {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+
+      observe = observe;
+      disconnect = disconnect;
+      unobserve = vi.fn();
+    }
+
+    vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+
+    const { result } = renderHook(() => useScrollEdges<HTMLDivElement>());
+    const element = document.createElement('div');
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 100,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => result.current.ref(element));
+
+    setScrollMeasurements(element, {
+      clientHeight: 100,
+      clientWidth: 100,
+      scrollHeight: 300,
+      scrollLeft: 0,
+      scrollTop: 0,
+      scrollWidth: 100,
+    });
+
+    act(() => {
+      resizeCallback?.([], {} as ResizeObserver);
+    });
+
+    expect(observe).toHaveBeenCalledWith(element);
+    expect(result.current.hasBottomEdge).toBe(true);
   });
 });

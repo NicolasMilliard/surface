@@ -72,8 +72,19 @@ export function useScrollEdges<T extends HTMLElement = HTMLElement>(
         passive: true,
       });
 
+      const ownerWindow = element.ownerDocument.defaultView;
+      ownerWindow?.addEventListener('resize', update);
+
+      const resizeObserver =
+        typeof ResizeObserver === 'undefined'
+          ? null
+          : new ResizeObserver(update);
+      resizeObserver?.observe(element);
+
       cleanupRef.current = () => {
         element.removeEventListener('scroll', update);
+        ownerWindow?.removeEventListener('resize', update);
+        resizeObserver?.disconnect();
       };
 
       update();
